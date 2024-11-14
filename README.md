@@ -1,10 +1,10 @@
 # CodeAlpha_Network_intrusion_detection_system
 This is a network-based intrusion detection system  using  Suricata tools with rules and alerts set up to identify and respond to suspicious network activity.
 
-w is a step-by-step guide on how to set up and configure Suricata to detect suspicious network activity, create rules, set up alerts, and visualize detected attacks. We’ll focus on Suricata for this guide, as it is a powerful, modern IDS/IPS engine that is well-supported.
+Below is a step-by-step guide on how to set up and configure Suricata to detect suspicious network activity, create rules, set up alerts, and visualize detected attacks. We’ll focus on Suricata for this guide, as it is a powerful, modern IDS/IPS engine that is well-supported.
 Prerequisites
 
-    A system running Ubuntu (or any Debian-based Linux distribution).
+A system running Ubuntu (or any Debian-based Linux distribution).
     Root or sudo access.
     Basic knowledge of Linux command-line operations.
 
@@ -12,78 +12,80 @@ Step 1: Install Suricata
 
 First, we need to install Suricata on your system. Open a terminal and run:
 
-sudo apt update
-sudo apt install -y suricata
+     sudo apt update
+     sudo apt install -y suricata
 
 Check the Suricata version to ensure it’s installed correctly:
 
-suricata --version
+    suricata --version
 
 Step 2: Configure Network Interfaces
 
 Identify the network interface you want Suricata to monitor using:
 
-ip a
+    ip a
 
 Suppose your interface is eth0. Edit the Suricata configuration file to set this interface:
 
-sudo nano /etc/suricata/suricata.yaml
+    sudo nano /etc/suricata/suricata.yaml
 
 Look for the af-packet section and update it like so:
-
-af-packet:
-  - interface: eth0
-    cluster-id: 99
-    cluster-type: cluster_flow
-    defrag: yes
+   
+     af-packet:
+     - interface: eth0
+       cluster-id: 99
+       cluster-type: cluster_flow
+       defrag: yes
 
 Save and close the file (Ctrl + X, then Y and Enter).
 Step 3: Download Latest Rules
 
 Suricata uses rules to detect network intrusions. Let's download the Emerging Threats Open rule set:
 
-sudo apt install -y suricata-update
-sudo suricata-update
+     sudo apt install -y suricata-update
+     sudo suricata-update
 
 This will download the latest set of rules and integrate them into Suricata.
 Step 4: Customizing Rules
 
 You can create custom rules to detect specific activities. Let’s create a rule to detect ping (ICMP Echo Request) attacks:
 
-sudo nano /etc/suricata/rules/local.rules
+    sudo nano /etc/suricata/rules/local.rules
 
 Add the following line to detect ICMP (ping) requests:
 
-alert icmp any any -> any any (msg:"ICMP Echo Request Detected"; sid:1000001; rev:1;)
+    alert icmp any any -> any any (msg:"ICMP Echo Request Detected"; sid:1000001; rev:1;)
 
 Save and close the file.
+
 Step 5: Test the Configuration
 
 To ensure your Suricata configuration is correct, run:
 
-sudo suricata -T -c /etc/suricata/suricata.yaml
+    sudo suricata -T -c /etc/suricata/suricata.yaml
 
 You should see configuration OK if everything is set up correctly.
+
 Step 6: Start Suricata
 
 Start Suricata in IDS mode:
 
-sudo systemctl start suricata
-sudo systemctl enable suricata
+    sudo systemctl start suricata
+    sudo systemctl enable suricata
 
 Verify that Suricata is running:
 
-sudo systemctl status suricata
+    sudo systemctl status suricata
 
 Step 7: Testing the IDS
 
 To test your Suricata setup, use the ping command from another device on the network:
 
-ping -c 4 <your_suricata_monitored_ip>
+    ping -c 4 <your_suricata_monitored_ip>
 
 Check the Suricata log to see if the ICMP alert was triggered:
 
-sudo tail -f /var/log/suricata/fast.log
+    sudo tail -f /var/log/suricata/fast.log
 
 You should see something like:
 
@@ -94,13 +96,13 @@ Step 8: Visualizing Detected Attacks with Kibana and Elasticsearch (Optional)
 To visualize network activity, we can use the Elastic Stack (Elasticsearch, Logstash, and Kibana).
 Install Elastic Stack
 
-sudo apt install -y elasticsearch logstash kibana
+    sudo apt install -y elasticsearch logstash kibana
 
 Configure Suricata to Output to Logstash
 
 Edit the Suricata configuration to send logs to Logstash:
 
-sudo nano /etc/suricata/suricata.yaml
+    sudo nano /etc/suricata/suricata.yaml
 
 Add the following under outputs:
 
@@ -114,23 +116,24 @@ outputs:
 
 Restart Suricata:
 
-sudo systemctl restart suricata
+    sudo systemctl restart suricata
 
 Set up Logstash Configuration for Suricata Logs
 
 Create a configuration file for Logstash:
 
-sudo nano /etc/logstash/conf.d/suricata.conf
+    sudo nano /etc/logstash/conf.d/suricata.conf
 
 Add the following:
 
-input {
-  file {
-    path => "/var/log/suricata/eve.json"
-    start_position => "beginning"
-    codec => "json"
-  }
-}
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: unix_stream
+      filename: /var/run/suricata/eve.json
+      types:
+        - alert
+
 
 output {
   elasticsearch {
@@ -141,7 +144,7 @@ output {
 
 Start Logstash:
 
-sudo systemctl restart logstash
+    sudo systemctl restart logstash
 
 Access Kibana Dashboard
 
@@ -157,7 +160,7 @@ Step 10: Keeping Rules Updated
 
 To keep your rules up-to-date, schedule a cron job:
 
-sudo crontab -e
+    sudo crontab -e
 
 Add the following line:
 
